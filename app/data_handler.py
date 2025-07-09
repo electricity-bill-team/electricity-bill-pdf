@@ -30,8 +30,7 @@ class ElectricityDataHandler:
 
     def get_summary_for_customer(self, customer_id: str, billing_month: str):
         """
-        Simulate fetching consumption details for a customer based on billing month.
-        This is mock logic since original dataset has no customer info.
+        Return both daily usage table and summary for a specific customer and billing month.
         """
         if self.df is None:
             raise ValueError("Data is not loaded. Call load_data() after download_dataset().")
@@ -40,22 +39,48 @@ class ElectricityDataHandler:
         month_data = self.df[
             (self.df['Date'].dt.month == month_dt.month) &
             (self.df['Date'].dt.year == month_dt.year)
+        ].copy()
+
+        if month_data.empty:
+            return None
+
+        # Aggregate data to daily level
+        month_data['DateOnly'] = month_data['Date'].dt.date
+        daily_summary = month_data.groupby('DateOnly').agg(
+            Start_Unit=('Global_active_power', 'first'),
+            End_Unit=('Global_active_power', 'last'),
+            Units_Consumed=('Global_active_power', lambda x: round(x.sum() / 60, 2))  # convert to kWh
+        ).reset_index()
+
+        # Build table headers and data for HTML template
+        table_headers = ["Date", "Start Unit (kW)", "End Unit (kW)", "Units Consumed (kWh)"]
+        table_data = [
+            [
+                row['DateOnly'].strftime('%Y-%m-%d'),
+                round(row['Start_Unit'], 3),
+                round(row['End_Unit'], 3),
+                row['Units_Consumed']
+            ]
+            for _, row in daily_summary.iterrows()
         ]
 
-        total_kwh = month_data['Global_active_power'].sum()
-        units_consumed = round(total_kwh, 2)
-        rate_per_unit = 7.5  # fixed
+        total_units = round(daily_summary['Units_Consumed'].sum(), 2)
+        rate_per_unit = 7.5
         fixed_charge = 50
-        total_amount = round(units_consumed * rate_per_unit + fixed_charge, 2)
+        total_amount = round(total_units * rate_per_unit + fixed_charge, 2)
 
         return {
             'customer_id': customer_id,
             'billing_month': billing_month,
-            'units_consumed': units_consumed,
-            'rate_per_unit': rate_per_unit,
-            'fixed_charge': fixed_charge,
-            'total_amount': total_amount,
-            'date': month_dt.strftime("%Y-%m-%d")
+            'date': month_dt.strftime("%Y-%m-%d"),
+            'table_headers': table_headers,
+            'table_data': table_data,
+            'summary': {
+                'total_units': total_units,
+                'rate_per_unit': rate_per_unit,
+                'fixed_charge': fixed_charge,
+                'total_amount': total_amount
+            }
         }
 
 # Example usage
@@ -63,5 +88,5 @@ if __name__ == "__main__":
     handler = ElectricityDataHandler()
     handler.download_dataset()
     handler.load_data()
-    summary = handler.get_summary_for_customer("CUST001", "July 2007")
-    print(summary)
+    result = handler.get_summary_for_customer("CUST001", "July 2007")
+    print(result)

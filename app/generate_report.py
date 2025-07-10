@@ -70,8 +70,4 @@ class ReportGenerator:
         )
         HTML(string=rendered_html, base_url=self.output_path).write_pdf(output_file)
         print(f"✅ PDF report generated at: {output_file}")
-
-# Example usage
-if __name__ == "__main__":
-    generator = ReportGenerator()
-    generator.generate("CUST001", "Ankit Pal", "December 2006")
+        return output_file

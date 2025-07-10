@@ -1,5 +1,7 @@
 import os
+import base64
 import matplotlib.pyplot as plt
+from io import BytesIO
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML
 from data_handler import ElectricityDataHandler
@@ -12,47 +14,64 @@ class ReportGenerator:
         self.env = Environment(loader=FileSystemLoader(self.template_path))
 
     def generate(self, customer_id: str, customer_name: str, billing_month: str):
-        # Step 1: Download and load dataset
+        # Step 1: Load data
         self.data_handler.download_dataset()
         self.data_handler.load_data()
 
-        # Step 2: Get billing summary
+        # Step 2: Fetch processed summary
         bill_summary = self.data_handler.get_summary_for_customer(customer_id, billing_month)
-        bill_summary['customer_name'] = customer_name
 
-        # Step 3: Generate line chart (daily usage)
+        # Step 3: Validate
+        if not bill_summary:
+            print("⚠ No data available for the selected month.")
+            return
+
+        # Step 4: Generate usage chart as base64
         dates = [row[0] for row in bill_summary['table_data']]
         units = [row[3] for row in bill_summary['table_data']]
 
-        chart_file = os.path.join(self.output_path, f"chart_{customer_id}_{billing_month.replace(' ', '_')}.png")
-
         plt.figure(figsize=(10, 4))
         plt.plot(dates, units, marker='o', linestyle='-', color='blue')
-        plt.xticks(rotation=45)
+        plt.xticks(rotation=45, fontsize=8)
         plt.title("Daily Electricity Usage")
         plt.xlabel("Date")
         plt.ylabel("Units Consumed (kWh)")
         plt.grid(True)
         plt.tight_layout()
-        plt.savefig(chart_file)
+
+        img_stream = BytesIO()
+        plt.savefig(img_stream, format='png')
         plt.close()
+        img_stream.seek(0)
+        chart_base64 = base64.b64encode(img_stream.read()).decode('utf-8')
 
-        # Step 4: Add chart path to summary
-        bill_summary['chart_path'] = os.path.basename(chart_file)
+        # Step 5: Prepare data for template
+        summary = bill_summary['summary']
+        summary.update({
+            'customer_id': customer_id,
+            'customer_name': customer_name,
+            'billing_month': billing_month,
+            'date': bill_summary['date'],
+            'chart_base64': chart_base64
+        })
 
-        # Step 5: Render HTML
+        # Step 6: Render and export
         template = self.env.get_template('report_template.html')
-        rendered_html = template.render(summary=bill_summary)
+        rendered_html = template.render(
+            summary=summary,
+            table_headers=bill_summary['table_headers'],
+            table_data=bill_summary['table_data']
+        )
 
-        # Step 6: Ensure output directory exists
         os.makedirs(self.output_path, exist_ok=True)
-        output_file = os.path.join(self.output_path, f"bill_{customer_id}_{billing_month.replace(' ', '_')}.pdf")
-
-        # Step 7: Generate PDF
+        output_file = os.path.join(
+            self.output_path,
+            f"bill_{customer_id}_{billing_month.replace(' ', '_')}.pdf"
+        )
         HTML(string=rendered_html, base_url=self.output_path).write_pdf(output_file)
-        print(f"PDF report generated: {output_file}")
+        print(f"✅ PDF report generated at: {output_file}")
 
 # Example usage
 if __name__ == "__main__":
     generator = ReportGenerator()
-    generator.generate("CUST001", "Ankit Pal", "July 2007")
+    generator.generate("CUST001", "Ankit Pal", "December 2006")

@@ -1,0 +1,33 @@
+{
+  "customer_id": "CUST001",
+  "customer_name": "Ankit Pal",
+  "billing_month": "July 2007",
+  "date": "2007-07-31",
+  "table_headers": [
+    "Date",
+    "Start Unit",
+    "End Unit",
+    "Units Consumed"
+  ],
+  "table_data": [
+    [
+      "2007-07-01",
+      1234.5,
+      1244.8,
+      10.3
+    ],
+    [
+      "2007-07-02",
+      1244.8,
+      1252.1,
+      7.3
+    ]
+  ],
+  "summary": {
+    "total_units": 234.2,
+    "rate_per_unit": 7.5,
+    "fixed_charge": 50,
+    "total_amount": 1806.5
+  },
+  "chart_path": "chart_CUST001_July_2007.png"
+}

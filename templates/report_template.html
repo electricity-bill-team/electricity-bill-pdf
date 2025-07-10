@@ -3,49 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <title>Electricity Bill Report</title>
+    <link rel="stylesheet" href="../static/styles.css">
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 40px;
-            color: #333;
+        @page {
+            margin: 1in;
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 10px;
+                color: #666;
+            }
         }
-        header {
-            text-align: center;
-            border-bottom: 2px solid #444;
-            padding-bottom: 10px;
-            margin-bottom: 30px;
-        }
-        .section-title {
-            font-size: 1.2em;
-            margin-top: 30px;
-            margin-bottom: 10px;
-            font-weight: bold;
-            border-bottom: 1px solid #ccc;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-        th, td {
-            border: 1px solid #999;
-            padding: 8px 12px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        .right {
-            text-align: right;
-        }
-        .bold {
-            font-weight: bold;
-        }
-        footer {
-            margin-top: 50px;
-            text-align: center;
-            font-size: 0.9em;
-            color: #777;
+        thead {
+            display: table-header-group;
         }
     </style>
 </head>
@@ -68,21 +37,44 @@
         </tr>
     </table>
 
-    <div class="section-title">Consumption Summary</div>
+    <div class="section-title">Daily Consumption Details</div>
+    <table>
+        <thead>
+            <tr>
+                {% for header in table_headers %}
+                <th>{{ header }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in table_data %}
+            <tr>
+                {% for cell in row %}
+                <td>{{ cell }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="section-title">Monthly Summary</div>
     <table>
         <tr>
-            <th>Units Consumed</th>
+            <th>Total Units Consumed</th>
             <th>Rate per Unit</th>
             <th>Fixed Charge</th>
             <th>Total Amount</th>
         </tr>
         <tr>
-            <td>{{ summary.units_consumed }} kWh</td>
+            <td>{{ summary.total_units }} kWh</td>
             <td>₹{{ summary.rate_per_unit }}</td>
             <td>₹{{ summary.fixed_charge }}</td>
             <td class="bold">₹{{ summary.total_amount }}</td>
         </tr>
     </table>
+
+    <div class="section-title">Usage Visualization</div>
+    <img src="data:image/png;base64,{{ summary.chart_base64 }}" alt="Daily Usage Chart" style="width: 100%; margin-top: 20px;">
 
     <footer>
         <p>Report generated automatically on {{ summary.date }}.</p>

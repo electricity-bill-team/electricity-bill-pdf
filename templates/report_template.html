@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Electricity Bill Report</title>
+    <link rel="stylesheet" href="../static/styles.css">
+    <style>
+        @page {
+            margin: 1in;
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 10px;
+                color: #666;
+            }
+        }
+        thead {
+            display: table-header-group;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Electricity Bill Report</h1>
+        <p><strong>Customer ID:</strong> {{ summary.customer_id }}</p>
+        <p><strong>Name:</strong> {{ summary.customer_name }}</p>
+    </header>
+
+    <div class="section-title">Billing Information</div>
+    <table>
+        <tr>
+            <th>Billing Month</th>
+            <th>Billing Date</th>
+        </tr>
+        <tr>
+            <td>{{ summary.billing_month }}</td>
+            <td>{{ summary.date }}</td>
+        </tr>
+    </table>
+
+    <div class="section-title">Daily Consumption Details</div>
+    <table>
+        <thead>
+            <tr>
+                {% for header in table_headers %}
+                <th>{{ header }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in table_data %}
+            <tr>
+                {% for cell in row %}
+                <td>{{ cell }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="section-title">Monthly Summary</div>
+    <table>
+        <tr>
+            <th>Total Units Consumed</th>
+            <th>Rate per Unit</th>
+            <th>Fixed Charge</th>
+            <th>Total Amount</th>
+        </tr>
+        <tr>
+            <td>{{ summary.total_units }} kWh</td>
+            <td>₹{{ summary.rate_per_unit }}</td>
+            <td>₹{{ summary.fixed_charge }}</td>
+            <td class="bold">₹{{ summary.total_amount }}</td>
+        </tr>
+    </table>
+
+    <div class="section-title">Usage Visualization</div>
+    <img src="data:image/png;base64,{{ summary.chart_base64 }}" alt="Daily Usage Chart" style="width: 100%; margin-top: 20px;">
+
+    <footer>
+        <p>Report generated automatically on {{ summary.date }}.</p>
+        <p>This is a system-generated document and does not require a signature.</p>
+    </footer>
+</body>
+</html>
